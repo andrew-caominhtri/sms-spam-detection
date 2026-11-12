@@ -167,6 +167,21 @@ with tab_detection:
         "Select Machine Learning Model:",
         options=list(model_options.keys())
     )
+    
+    # 2.1. Dieu chinh nguong phan loai Spam
+    spam_threshold = st.slider(
+        "Spam Classification Threshold (Ngưỡng phân loại Spam):",
+        min_value=0.3,
+        max_value=0.5,
+        value=0.5,
+        step=0.1,
+        help=(
+            "Lower thresholds may detect more Spam but can "
+            "increase false positives. / "
+            "Ngưỡng thấp có thể phát hiện thêm Spam nhưng "
+            "cũng có thể làm tăng số tin Ham bị nhận nhầm."
+        )
+    )
 
     # 3. Nut bat dau du doan
     if st.button("Detect Spam", type="primary"):
