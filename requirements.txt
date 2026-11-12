@@ -1,0 +1,54 @@
+# ============================================================
+# DỰ ÁN: PHÁT HIỆN TIN NHẮN SMS SPAM BẰNG MACHINE LEARNING
+# Phiên bản Python: 3.11.9
+# Môi trường ảo: .venv
+# ============================================================
+
+# 1. NUMPY
+# Xử lý mảng và các phép tính toán số học.
+# Hỗ trợ các thao tác với dữ liệu số trong quá trình học máy.
+numpy==1.26.4
+
+# 2. PANDAS
+# Đọc và xử lý bộ dữ liệu UCI SMS Spam Collection.
+# Loại bỏ tin nhắn trùng lặp và thống kê phân bố nhãn Spam/Ham.
+# Đọc file outputs/metrics.csv để hiển thị bảng đánh giá trên Streamlit.
+pandas==2.2.3
+
+# 3. SCIKIT-LEARN
+# Chia dữ liệu thành tập train/test theo tỷ lệ 80/20, có phân tầng (stratify).
+# Chuyển văn bản thành vector đặc trưng TF-IDF (unigram và bigram).
+# Huấn luyện Multinomial Naive Bayes và Logistic Regression.
+# Tạo Pipeline kết hợp TF-IDF và bộ phân loại.
+# Tính Accuracy, Precision, Recall, F1-score và Confusion Matrix.
+scikit-learn==1.5.2
+
+# 4. STREAMLIT
+# Xây dựng giao diện web gồm ba tab: Detection, Performance và About.
+# Detection: nhập SMS, chọn mô hình, hiển thị nhãn và xác suất dự đoán.
+# Performance: hiển thị bảng metrics.csv và ba biểu đồ đánh giá.
+# About: giới thiệu dự án, bộ dữ liệu, phương pháp, công nghệ và GitHub.
+streamlit==1.39.0
+
+# 5. MATPLOTLIB
+# Vẽ biểu đồ so sánh các chỉ số đánh giá giữa hai mô hình.
+# Hỗ trợ tạo và lưu hình Confusion Matrix vào thư mục outputs/.
+matplotlib==3.9.2
+
+# 6. SEABORN
+# Trực quan hóa Confusion Matrix bằng biểu đồ nhiệt (heatmap).
+# Giúp thể hiện số lượng dự đoán đúng/sai theo từng nhãn.
+seaborn==0.13.2
+
+# 7. JOBLIB
+# Lưu hai Pipeline đã huấn luyện thành file .joblib trong thư mục models/.
+# Tải lại Pipeline để dự đoán SMS mới trên giao diện Streamlit.
+# Tránh phải huấn luyện lại mỗi khi khởi động ứng dụng.
+joblib==1.4.2
+
+# 8. PYARROW
+# Thư viện xử lý dữ liệu dạng cột (Apache Arrow) được Streamlit sử dụng.
+# Hỗ trợ chuyển đổi và hiển thị Pandas DataFrame qua st.dataframe().
+# Cố định phiên bản 17.0.0 để tương thích với NumPy 1.26.4 trong dự án.
+# Tránh lỗi import từng gặp với PyArrow 26.0.0.
+pyarrow==17.0.0

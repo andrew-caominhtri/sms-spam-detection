@@ -1,0 +1,39 @@
+
+# ============================================
+# SMS SPAM DETECTION - GITIGNORE
+# Quy tắc loại trừ Git / Git exclusion rules
+# ============================================
+
+# Môi trường ảo Python / Python virtual environments
+.venv/
+venv/
+
+# Bộ nhớ đệm Python / Python cache files
+__pycache__/
+*.py[cod]
+
+# Cấu hình IDE và trình soạn thảo / IDE and editor settings
+.vscode/
+.idea/
+
+# Biến môi trường và thông tin bảo mật / Environment variables and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Tệp tạm và nhật ký / Temporary files and logs
+*.log
+*.tmp
+.pytest_cache/
+.DS_Store
+Thumbs.db
+
+# Dữ liệu sử dụng và lưu trữ trong đồ án / Project datasets
+# Giữ data/ trong Git để tái lập thực nghiệm / Track data/ for reproducibility
+
+# Mô hình đã huấn luyện cho Streamlit / Trained models for Streamlit
+# Giữ models/ trong Git để chạy demo trực tiếp / Track models/ for immediate demonstration
+
+# Kết quả đánh giá cho tab Performance / Evaluation results for the Performance tab
+# Giữ outputs/ trong Git để hiển thị kết quả / Track outputs/ to display evaluation results
