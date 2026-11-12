@@ -197,10 +197,20 @@ with tab_detection:
             # Tai mo hinh da huan luyen
             model = get_model(model_name)
 
-            # Du doan tin nhan
+            
+            # Du doan tin nhan va lay xac suat
             prediction, probabilities = predict_message(
                 model,
                 message
+            )
+
+            # Ap dung nguong phan loai do nguoi dung chon
+            spam_probability = probabilities["spam"]
+
+            prediction = (
+                "spam"
+                if spam_probability >= spam_threshold
+                else "ham"
             )
 
             # 4. Hien thi ket qua
