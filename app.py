@@ -20,6 +20,64 @@ def predict_message(model, message):
     probabilities = model.predict_proba([message])[0]
     return prediction, dict(zip(model.classes_, probabilities))
 
+
+def explain_prediction(model, message, top_n=5):
+    """
+    Tinh muc do dong gop cua cac dac trung TF-IDF
+    vao du doan Spam so voi Ham.
+    """
+
+    # Lay TF-IDF va classifier tu Pipeline
+    vectorizer = model.steps[0][1]
+    classifier = model.steps[-1][1]
+
+    # Bien doi tin nhan thanh vector TF-IDF
+    features = vectorizer.transform([message])
+
+    # Lay ten cac tu/cum tu
+    feature_names = vectorizer.get_feature_names_out()
+
+    # Xac dinh vi tri nhan Spam va Ham
+    classes = list(classifier.classes_)
+    spam_idx = classes.index("spam")
+    ham_idx = classes.index("ham")
+
+    # Tinh trong so cua tung dac trung
+    if hasattr(classifier, "feature_log_prob_"):
+        # Multinomial Naive Bayes
+        weights = (
+            classifier.feature_log_prob_[spam_idx]
+            - classifier.feature_log_prob_[ham_idx]
+        )
+
+    elif hasattr(classifier, "coef_"):
+        # Logistic Regression nhi phan
+        spam_sign = 1 if classes[1] == "spam" else -1
+        weights = spam_sign * classifier.coef_[0]
+
+    else:
+        raise ValueError("Unsupported model for explanation.")
+
+    # Chi lay cac dac trung xuat hien trong tin nhan
+    contributions = []
+
+    for index, value in zip(features.indices, features.data):
+        contribution = float(value * weights[index])
+
+        contributions.append({
+            "Feature": feature_names[index],
+            "Contribution": contribution
+        })
+
+    # Sap xep theo muc do anh huong tuyet doi
+    contributions.sort(
+        key=lambda item: abs(item["Contribution"]),
+        reverse=True
+    )
+
+    return contributions[:top_n]
+
+
 @st.cache_resource
 def get_model(model_name):
     """
@@ -65,10 +123,38 @@ with tab_detection:
     )
 
     # 1. Nhap noi dung tin nhan
+
+    # Danh sach SMS mau de demo
+    sample_messages = {
+        "Custom Message": "",
+        "Normal SMS": "Hi, are we still meeting at the library at 3 pm tomorrow?",
+        "Spam SMS": "Congratulations! You have won a free prize. Claim now!",
+        "Challenging SMS": "Hi, you have been selected for a special offer. Contact us today!"
+    }
+
+    # Lua chon SMS mau
+    selected_sample = st.selectbox(
+        "Choose a sample SMS:",
+        options=list(sample_messages.keys())
+    )
+
+    # Cap nhat noi dung khi thay doi SMS mau
+    if "sms_message" not in st.session_state:
+        st.session_state.sms_message = ""
+
+    if "previous_sample" not in st.session_state:
+        st.session_state.previous_sample = "Custom Message"
+
+    if selected_sample != st.session_state.previous_sample:
+        st.session_state.sms_message = sample_messages[selected_sample]
+        st.session_state.previous_sample = selected_sample
+
+    # O nhap tin nhan
     message = st.text_area(
         "Enter your SMS message:",
         placeholder="Type your SMS message here...",
-        height=150
+        height=150,
+        key="sms_message"
     )
 
     # 2. Lua chon mo hinh
@@ -126,6 +212,82 @@ with tab_detection:
                     "Spam Probability",
                     f"{probabilities['spam'] * 100:.2f}%"
                 )
+                
+            
+            # 6. Giai thich ket qua du doan
+            st.subheader(
+                "Prediction Explanation (Giải thích kết quả dự đoán)"
+            )
+
+            st.write(
+                "Top TF-IDF features influencing the prediction "
+                "toward Spam or Ham."
+            )
+
+            st.caption(
+                "Các từ hoặc cụm từ có mức đóng góp lớn nhất "
+                "vào kết quả phân loại tin nhắn."
+            )
+
+            explanations = explain_prediction(
+                model,
+                message,
+                top_n=5
+            )
+
+            if explanations:
+                explanation_df = pd.DataFrame(explanations)
+
+                explanation_df["Direction"] = (
+                    explanation_df["Contribution"].apply(
+                        lambda x: "Spam" if x > 0
+                        else "Ham" if x < 0
+                        else "Neutral"
+                    )
+                )
+
+                explanation_df = explanation_df.rename(
+                    columns={
+                        "Feature": "Feature (Từ/Cụm từ)",
+                        "Contribution": "Contribution (Đóng góp)",
+                        "Direction": "Direction (Xu hướng)"
+                    }
+                )
+
+                st.dataframe(
+                    explanation_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                st.markdown("**Result Interpretation / Giải thích kết quả:**")
+
+                st.markdown(
+                    "- **Positive (+) / Dương:** "
+                    "Đặc trưng góp phần làm tăng xu hướng dự đoán Spam.\n"
+                    "- **Negative (-) / Âm:** "
+                    "Đặc trưng góp phần làm tăng xu hướng dự đoán Ham.\n"
+                    "- **Contribution / Đóng góp:** "
+                    "Giá trị đóng góp vào điểm log-odds, "
+                    "không phải phần trăm xác suất."
+                )
+
+                st.info(
+                    "The final prediction also depends on other "
+                    "features and the model's intercept or prior.\n\n"
+                    "Dự đoán cuối cùng còn phụ thuộc vào các "
+                    "đặc trưng khác và hệ số chặn hoặc xác suất "
+                    "tiên nghiệm của mô hình."
+                )
+
+            else:
+                st.info(
+                    "No matching TF-IDF features found.\n\n"
+                    "Không tìm thấy đặc trưng TF-IDF phù hợp "
+                    "trong tin nhắn."
+                )
+
+
 
 
 
