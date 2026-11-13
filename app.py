@@ -69,13 +69,31 @@ def explain_prediction(model, message, top_n=5):
             "Contribution": contribution
         })
 
-    # Sap xep theo muc do anh huong tuyet doi
-    contributions.sort(
-        key=lambda item: abs(item["Contribution"]),
+    
+    # Tach dac trung theo huong Spam va Ham
+    spam_features = [
+        item for item in contributions
+        if item["Contribution"] > 0
+    ]
+
+    ham_features = [
+        item for item in contributions
+        if item["Contribution"] < 0
+    ]
+
+    # Spam: dong gop duong lon nhat truoc
+    spam_features.sort(
+        key=lambda item: item["Contribution"],
         reverse=True
     )
 
-    return contributions[:top_n]
+    # Ham: dong gop am manh nhat truoc
+    ham_features.sort(
+        key=lambda item: item["Contribution"]
+    )
+
+    return spam_features[:top_n], ham_features[:top_n]
+
 
 
 @st.cache_resource
@@ -95,7 +113,7 @@ def get_model(model_name):
 st.set_page_config(
     page_title="SMS Spam Detection",
     page_icon="📩",
-    layout="wide"
+    layout="centered",
 )
 
 
