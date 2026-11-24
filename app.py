@@ -186,20 +186,23 @@ with tab_detection:
         options=list(model_options.keys())
     )
     
+    
     # 2.1. Dieu chinh nguong phan loai Spam
     spam_threshold = st.slider(
         "Spam Classification Threshold (Ngưỡng phân loại Spam):",
         min_value=0.3,
         max_value=0.5,
         value=0.5,
-        step=0.1,
+        step=0.15,
+        format="%.1f",
         help=(
-            "Lower thresholds may detect more Spam but can "
-            "increase false positives. / "
+            "Lower thresholds may detect more Spam but "
+            "can increase false positives. / "
             "Ngưỡng thấp có thể phát hiện thêm Spam nhưng "
             "cũng có thể làm tăng số tin Ham bị nhận nhầm."
         )
     )
+
 
     # 3. Nut bat dau du doan
     if st.button("Detect Spam", type="primary"):
@@ -271,64 +274,114 @@ with tab_detection:
                 "Các từ hoặc cụm từ có mức đóng góp lớn nhất "
                 "vào kết quả phân loại tin nhắn."
             )
-
-            explanations = explain_prediction(
+            
+            # Lay hai nhom dac trung tu ham giai thich
+            spam_features, ham_features = explain_prediction(
                 model,
                 message,
                 top_n=5
             )
 
-            if explanations:
-                explanation_df = pd.DataFrame(explanations)
+            # Hien thi cac dac trung nghieng ve Spam
+            st.markdown(
+                "#### Spam Indicators (Đặc trưng nghiêng về Spam)"
+            )
 
-                explanation_df["Direction"] = (
-                    explanation_df["Contribution"].apply(
-                        lambda x: "Spam" if x > 0
-                        else "Ham" if x < 0
-                        else "Neutral"
-                    )
-                )
+            if spam_features:
+                spam_df = pd.DataFrame(spam_features)
 
-                explanation_df = explanation_df.rename(
+                spam_df = spam_df.rename(
                     columns={
                         "Feature": "Feature (Từ/Cụm từ)",
-                        "Contribution": "Contribution (Đóng góp)",
-                        "Direction": "Direction (Xu hướng)"
+                        "Contribution": "Contribution (Đóng góp)"
                     }
                 )
 
                 st.dataframe(
-                    explanation_df,
+                    spam_df,
                     use_container_width=True,
                     hide_index=True
                 )
-
-                st.markdown("**Result Interpretation / Giải thích kết quả:**")
-
-                st.markdown(
-                    "- **Positive (+) / Dương:** "
-                    "Đặc trưng góp phần làm tăng xu hướng dự đoán Spam.\n"
-                    "- **Negative (-) / Âm:** "
-                    "Đặc trưng góp phần làm tăng xu hướng dự đoán Ham.\n"
-                    "- **Contribution / Đóng góp:** "
-                    "Giá trị đóng góp vào điểm log-odds, "
-                    "không phải phần trăm xác suất."
-                )
-
-                st.info(
-                    "The final prediction also depends on other "
-                    "features and the model's intercept or prior.\n\n"
-                    "Dự đoán cuối cùng còn phụ thuộc vào các "
-                    "đặc trưng khác và hệ số chặn hoặc xác suất "
-                    "tiên nghiệm của mô hình."
-                )
-
             else:
-                st.info(
-                    "No matching TF-IDF features found.\n\n"
-                    "Không tìm thấy đặc trưng TF-IDF phù hợp "
-                    "trong tin nhắn."
+                st.info("Không tìm thấy đặc trưng nghiêng về Spam.")
+
+            # Hien thi cac dac trung nghieng ve Ham
+            st.markdown(
+                "#### Ham Indicators (Đặc trưng nghiêng về Ham)"
+            )
+
+            if ham_features:
+                ham_df = pd.DataFrame(ham_features)
+
+                ham_df = ham_df.rename(
+                    columns={
+                        "Feature": "Feature (Từ/Cụm từ)",
+                        "Contribution": "Contribution (Đóng góp)"
+                    }
                 )
+
+                st.dataframe(
+                    ham_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+            else:
+                st.info("Không tìm thấy đặc trưng nghiêng về Ham.")
+
+            # Giai thich y nghia cac gia tri
+            st.markdown(
+                "**Result Interpretation / Giải thích kết quả:**"
+            )
+
+            st.markdown(
+            "- **Dương (+):** Đặc trưng đóng góp theo hướng Spam.\n"
+            "- **Âm (-):** Đặc trưng đóng góp theo hướng Ham.\n"
+            "- **Contribution (Đóng góp):** "
+            "Thể hiện mức đóng góp của từng đặc trưng vào "
+            "điểm phân loại của mô hình, không phải xác suất. "
+            "Kết quả cuối cùng còn phụ thuộc vào toàn bộ "
+            "đặc trưng và thành phần nền của mô hình."
+            )
+            
+            # 7. Nhan xet tu dong theo nguong phan loai
+            st.markdown("#### Nhận xét theo ngưỡng phân loại")
+
+            threshold_percent = spam_threshold * 100
+            spam_percent = spam_probability * 100
+
+            st.write(
+                f"Mô hình đang sử dụng: **{selected_model}**."
+            )
+
+            st.write(
+                f"Xác suất Spam của tin nhắn là "
+                f"**{spam_percent:.2f}%**, "
+                f"với ngưỡng phân loại **{threshold_percent:.0f}%**."
+            )
+
+            if spam_probability >= spam_threshold:
+                st.write(
+                    f"Vì xác suất Spam ({spam_percent:.2f}%) "
+                    f"lớn hơn hoặc bằng ngưỡng "
+                    f"({threshold_percent:.0f}%), "
+                    f"tin nhắn được phân loại là **Spam**."
+                )
+            else:
+                st.write(
+                    f"Vì xác suất Spam ({spam_percent:.2f}%) "
+                    f"nhỏ hơn ngưỡng ({threshold_percent:.0f}%), "
+                    f"tin nhắn được phân loại là **Ham**."
+                )
+
+            st.caption(
+                "Việc thay đổi ngưỡng phân loại chỉ ảnh hưởng "
+                "đến nhãn Ham/Spam, không làm thay đổi xác suất "
+                "do mô hình tính toán. Nếu xác suất Spam vẫn nằm "
+                "cùng phía so với ngưỡng mới, kết quả phân loại "
+                "sẽ không thay đổi."
+            )
+
+
 
 
 
