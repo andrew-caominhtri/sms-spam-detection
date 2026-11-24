@@ -18,11 +18,11 @@ Hệ thống sử dụng **TF-IDF** để biểu diễn văn bản và so sánh 
 - **Tên:** SMS Spam Collection.
 - **Nguồn:** UCI Machine Learning Repository – [SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms+spam+collection).
 - **Dữ liệu sử dụng:** `data/sms+spam+collection/SMSSpamCollection` (hai cột: `label`, `message`, phân cách bằng tab).
-- **Số mẫu ban đầu:** 5.572 SMS, gồm 4.825 Ham và 747 Spam.
-- **Sau loại bỏ tin nhắn trùng lặp:** 5.169 SMS, gồm 4.516 Ham và 653 Spam.
-- **Chia dữ liệu:** 80% Train (4.135 mẫu), 20% Test (1.034 mẫu), phân tầng theo nhãn (`stratify`), `random_state=42`.
+- **Số mẫu ban đầu:** 5.574 SMS, gồm 4.827 Ham và 747 Spam.
+- **Sau loại bỏ tin nhắn trùng lặp:** 5.171 SMS, gồm 4.518 Ham và 653 Spam.
+- **Chia dữ liệu:** 80% Train (4.136 mẫu), 20% Test (1.035 mẫu), phân tầng theo nhãn (`stratify`), `random_state=42`.
 
-Thư mục `data/VN-dataset/` là dữ liệu tiếng Việt được lưu trong dự án để tham khảo, **không được sử dụng để huấn luyện hoặc đánh giá hai mô hình hiện tại**.
+Dự án trong ZIP sử dụng bộ dữ liệu SMS tiếng Anh đi kèm.
 
 ## 3. Quy trình thực hiện
 
@@ -36,34 +36,31 @@ Thư mục `data/VN-dataset/` là dữ liệu tiếng Việt được lưu trong
 ## 4. Cấu trúc thư mục
 
 ```text
-sms-spam-detection/
+sms-spam-detection-converted/
 ├── SMS_Spam_Detection.ipynb                            # Toàn bộ thực nghiệm: dữ liệu, TF-IDF, huấn luyện, đánh giá, lưu mô hình
 ├── app.py                                              # Giao diện Streamlit: Detection, Performance, About
 ├── requirements.txt                                    # Các thư viện Python và phiên bản sử dụng
 ├── README.md                                           # Giới thiệu, hướng dẫn cài đặt và kết quả đồ án
+├── README_ENG.md                                       # English documentation
 ├── .gitignore                                          # Danh sách file/thư mục không đưa vào Git
 ├── data/
-│   ├── sms+spam+collection/
-│   │   ├── SMSSpamCollection                           # Dataset tiếng Anh dùng trong thực nghiệm
-│   │   └── readme                                      # Thông tin kèm theo dataset gốc
-│   └── VN-dataset/
-│       ├── full_dataset.csv                            # Dữ liệu tiếng Việt lưu tham khảo, không sử dụng
-│       ├── train.csv                                   # Dữ liệu tiếng Việt lưu tham khảo, không sử dụng
-│       └── test.csv                                    # Dữ liệu tiếng Việt lưu tham khảo, không sử dụng
+│   └── sms+spam+collection/
+│       ├── SMSSpamCollection                           # Dataset tiếng Anh dùng trong thực nghiệm
+│       └── readme                                      # Thông tin kèm theo dataset gốc
 ├── models/
 │   ├── naive_bayes_pipeline.joblib                     # Pipeline TF-IDF + Multinomial Naive Bayes đã huấn luyện
 │   └── logistic_regression_pipeline.joblib             # Pipeline TF-IDF + Logistic Regression đã huấn luyện
-├── outputs/
-│   ├── metrics.csv                                     # Bảng chỉ số đánh giá hai mô hình
-│   ├── confusion_matrix_naive_bayes.png                # Ma trận nhầm lẫn Naive Bayes
-│   ├── confusion_matrix_logistic_regression.png        # Ma trận nhầm lẫn Logistic Regression
-│   └── model_comparison.png                            # Biểu đồ so sánh các chỉ số
-└── report/                                             # Thư mục dành cho báo cáo đồ án
+└── outputs/
+    ├── metrics.csv                                     # Bảng chỉ số đánh giá hai mô hình
+    ├── threshold_metrics.csv                           # So sánh ngưỡng trên tập Test
+    ├── confusion_matrix_naive_bayes.png                # Ma trận nhầm lẫn Naive Bayes
+    ├── confusion_matrix_logistic_regression.png        # Ma trận nhầm lẫn Logistic Regression
+    └── model_comparison.png                            # Biểu đồ so sánh các chỉ số
 ```
 
 ## 5. Cài đặt môi trường
 
-**Yêu cầu:** Python 3.11, PowerShell (Windows) và mã nguồn dự án. Mở Terminal **tại thư mục gốc** `sms-spam-detection`.
+**Yêu cầu:** Python 3.11, PowerShell (Windows) và mã nguồn dự án. Mở Terminal **tại thư mục gốc** `sms-spam-detection-converted`.
 
 ```powershell
 # Tạo môi trường ảo
@@ -92,7 +89,7 @@ Có thể mở Notebook bằng VS Code với tiện ích Jupyter, chọn Python 
 Tại thư mục gốc, sau khi kích hoạt `.venv` và cài thư viện:
 
 ```powershell
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 Mở địa chỉ local được Streamlit hiển thị trong Terminal (thường là `http://localhost:8501`). Ứng dụng có ba tab:
@@ -114,25 +111,18 @@ Mở địa chỉ local được Streamlit hiển thị trong Terminal (thườn
 
 ## 8. Kết quả huấn luyện và đánh giá
 
-Kết quả được đo trên **1.034 SMS thuộc tập Test**, không dùng để huấn luyện. Lớp dương trong các phép tính Precision, Recall và F1-score là **Spam**.
+Kết quả được đo trên **1.035 SMS thuộc tập Test**, không dùng để huấn luyện. Lớp dương trong các phép tính Precision, Recall và F1-score là **Spam**.
 
-| Chỉ số | Multinomial Naive Bayes | Logistic Regression |
-|---|---:|---:|
-| Accuracy | **96,32%** | 96,23% |
-| Precision (Spam) | 100,00% | 100,00% |
-| Recall (Spam) | **70,99%** | 70,23% |
-| F1-score (Spam) | **83,04%** | 82,51% |
+| Mô hình | Ngưỡng | Accuracy | Precision | Recall | F1-score | TN | FP | FN | TP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Multinomial Naive Bayes | 0,50 | 96,33% | 100,00% | 70,99% | 83,04% | 904 | 0 | 38 | 93 |
+| Logistic Regression | 0,50 | 96,33% | 100,00% | 70,99% | 83,04% | 904 | 0 | 38 | 93 |
+| Multinomial Naive Bayes | 0,30 | 97,10% | 99,03% | 77,86% | 87,18% | 903 | 1 | 29 | 102 |
+| Logistic Regression | 0,30 | 97,68% | 94,96% | 86,26% | 90,40% | 898 | 6 | 18 | 113 |
 
-Ma trận nhầm lẫn theo thứ tự nhãn `[ham, spam]`:
+Ngưỡng 0,30 đạt F1 cao nhất trên Validation cho từng mô hình trong ba ngưỡng 0,30, 0,40 và 0,50. Trên Test, giảm ngưỡng giúp cả hai mô hình phát hiện thêm Spam và làm tăng số tin Ham bị báo nhầm (FP). Logistic Regression ở 0,30 đạt F1 cao nhất trong bảng.
 
-| Mô hình | TN (Ham đúng) | FP (Ham bị báo Spam) | FN (Spam bị bỏ sót) | TP (Spam đúng) |
-|---|---:|---:|---:|---:|
-| Multinomial Naive Bayes | 903 | 0 | 38 | 93 |
-| Logistic Regression | 903 | 0 | 39 | 92 |
-
-**Nhận xét:** Hai mô hình có độ chính xác tổng thể gần tương đương; Naive Bayes nhỉnh hơn nhẹ về Recall và F1-score trên tập Test này. Cả hai không báo nhầm tin Ham thành Spam trong tập Test, nhưng vẫn **bỏ sót 38–39 tin Spam**. Vì vậy, không nên diễn giải Accuracy hoặc Precision cao thành khả năng phát hiện Spam hoàn hảo.
-
-Kết quả chi tiết và biểu đồ được lưu tại `outputs/metrics.csv`, `outputs/model_comparison.png` và hai file `confusion_matrix_*.png`.
+Tab Performance hiển thị bảng so sánh ngưỡng từ `outputs/threshold_metrics.csv` và biểu đồ ở mốc 0,50. Mục 7.7 trong notebook phân tích ba lỗi cụ thể trên tập Test.
 
 ## 9. Giới hạn và lưu ý
 

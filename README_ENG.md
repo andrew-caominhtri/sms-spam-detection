@@ -18,11 +18,11 @@ The system uses **TF-IDF** for text representation and compares two classifiers:
 - **Dataset:** SMS Spam Collection.
 - **Source:** UCI Machine Learning Repository – [SMS Spam Collection](https://archive.ics.uci.edu/dataset/228/sms+spam+collection).
 - **Dataset file:** `data/sms+spam+collection/SMSSpamCollection` (tab-separated `label` and `message` fields).
-- **Original dataset:** 5,572 messages: 4,825 Ham and 747 Spam.
-- **After removing duplicate messages:** 5,169 messages: 4,516 Ham and 653 Spam.
-- **Data split:** 80% training (4,135 messages) and 20% testing (1,034 messages), stratified by class label, with `random_state=42`.
+- **Original dataset:** 5,574 messages: 4,827 Ham and 747 Spam.
+- **After removing duplicate messages:** 5,171 messages: 4,518 Ham and 653 Spam.
+- **Data split:** 80% training (4,136 messages) and 20% testing (1,035 messages), stratified by class label, with `random_state=42`.
 
-The `data/VN-dataset/` directory contains Vietnamese-language data retained for reference. **It is not used to train or evaluate the current models.**
+The ZIP includes the English SMS dataset used by the project.
 
 ## 3. Machine Learning Workflow
 
@@ -36,34 +36,31 @@ The `data/VN-dataset/` directory contains Vietnamese-language data retained for 
 ## 4. Project Structure
 
 ```text
-sms-spam-detection/
+sms-spam-detection-converted/
 ├── SMS_Spam_Detection.ipynb         # Full ML experiment: data, TF-IDF, training, evaluation, model export
 ├── app.py                           # Streamlit interface: Detection, Performance, About
 ├── requirements.txt                 # Python dependencies and pinned versions
 ├── README.md                        # Project overview, setup instructions, and results
+├── README_ENG.md                                       # English documentation
 ├── .gitignore                       # Files and folders excluded from Git tracking
 ├── data/
-│   ├── sms+spam+collection/
-│   │   ├── SMSSpamCollection        # English SMS dataset used in the experiment
-│   │   └── readme                   # Original dataset documentation
-│   └── VN-dataset/
-│       ├── full_dataset.csv         # Reference Vietnamese dataset; not used
-│       ├── train.csv                # Reference Vietnamese dataset; not used
-│       └── test.csv                 # Reference Vietnamese dataset; not used
+│   └── sms+spam+collection/
+│       ├── SMSSpamCollection        # English SMS dataset used in the experiment
+│       └── readme                   # Original dataset documentation
 ├── models/
 │   ├── naive_bayes_pipeline.joblib  # Trained TF-IDF + Multinomial Naive Bayes pipeline
 │   └── logistic_regression_pipeline.joblib  # Trained TF-IDF + Logistic Regression pipeline
-├── outputs/
-│   ├── metrics.csv                  # Evaluation metrics for both models
-│   ├── confusion_matrix_naive_bayes.png        # Naive Bayes confusion matrix
-│   ├── confusion_matrix_logistic_regression.png # Logistic Regression confusion matrix
-│   └── model_comparison.png         # Model performance comparison chart
-└── report/                          # Directory reserved for the project report
+└── outputs/
+    ├── metrics.csv                  # Evaluation metrics for both models
+    ├── threshold_metrics.csv                           # Test-set threshold comparison
+    ├── confusion_matrix_naive_bayes.png        # Naive Bayes confusion matrix
+    ├── confusion_matrix_logistic_regression.png # Logistic Regression confusion matrix
+    └── model_comparison.png         # Model performance comparison chart
 ```
 
 ## 5. Environment Setup
 
-**Requirements:** Python 3.11, Windows PowerShell, and the project source files. Open a terminal in the **project root** (`sms-spam-detection`).
+**Requirements:** Python 3.11, Windows PowerShell, and the project source files. Open a terminal in the **project root** (`sms-spam-detection-converted`).
 
 ```powershell
 # Create a virtual environment
@@ -92,7 +89,7 @@ You can open the Notebook in VS Code with the Jupyter extension and select the P
 From the project root, after activating `.venv` and installing dependencies, run:
 
 ```powershell
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 Open the local URL displayed in the terminal (usually `http://localhost:8501`). The application has three tabs:
@@ -114,25 +111,18 @@ Open the local URL displayed in the terminal (usually `http://localhost:8501`). 
 
 ## 8. Training and Test Results
 
-The following results were measured on **1,034 held-out test messages**, which were not used for training. **Spam** is the positive class for Precision, Recall, and F1-score.
+The following results were measured on **1,035 held-out test messages**, which were not used for training. **Spam** is the positive class for Precision, Recall, and F1-score.
 
-| Metric | Multinomial Naive Bayes | Logistic Regression |
-|---|---:|---:|
-| Accuracy | **96.32%** | 96.23% |
-| Precision (Spam) | 100.00% | 100.00% |
-| Recall (Spam) | **70.99%** | 70.23% |
-| F1-score (Spam) | **83.04%** | 82.51% |
+| Model | Threshold | Accuracy | Precision | Recall | F1-score | TN | FP | FN | TP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Multinomial Naive Bayes | 0.50 | 96.33% | 100.00% | 70.99% | 83.04% | 904 | 0 | 38 | 93 |
+| Logistic Regression | 0.50 | 96.33% | 100.00% | 70.99% | 83.04% | 904 | 0 | 38 | 93 |
+| Multinomial Naive Bayes | 0.30 | 97.10% | 99.03% | 77.86% | 87.18% | 903 | 1 | 29 | 102 |
+| Logistic Regression | 0.30 | 97.68% | 94.96% | 86.26% | 90.40% | 898 | 6 | 18 | 113 |
 
-Confusion matrix counts, using class order `[ham, spam]`:
+On the validation set, 0.30 gave each model its highest F1-score among 0.30, 0.40, and 0.50. On the test set, lowering the threshold detected more Spam and flagged more Ham as Spam (FP). Logistic Regression at 0.30 had the highest test F1-score in the table.
 
-| Model | TN (Correct Ham) | FP (Ham Flagged as Spam) | FN (Missed Spam) | TP (Correct Spam) |
-|---|---:|---:|---:|---:|
-| Multinomial Naive Bayes | 903 | 0 | 38 | 93 |
-| Logistic Regression | 903 | 0 | 39 | 92 |
-
-**Interpretation:** Both models achieve similar overall accuracy. Naive Bayes performs slightly better on Recall and F1-score on this test split. Neither model incorrectly flagged a Ham message as Spam in this test set, but they still **missed 38–39 Spam messages**. High Accuracy or Precision therefore should not be interpreted as perfect spam detection.
-
-Detailed metrics and figures are available in `outputs/metrics.csv`, `outputs/model_comparison.png`, and the two `confusion_matrix_*.png` files.
+The Performance tab shows the threshold comparison from `outputs/threshold_metrics.csv` and charts at the 0.50 baseline. Notebook section 7.7 analyzes three test-set errors.
 
 ## 9. Limitations and Important Notes
 

@@ -15,10 +15,11 @@ def load_model(model_name="naive_bayes"):
         raise ValueError(f"Mo hinh khong hop le: {model_name}")
     return joblib.load(MODELS_DIR / model_files[model_name])
 
-def predict_message(model, message):
-    prediction = model.predict([message])[0]
+def predict_message(model, message, spam_threshold=0.5):
     probabilities = model.predict_proba([message])[0]
-    return prediction, dict(zip(model.classes_, probabilities))
+    probabilities = dict(zip(model.classes_, probabilities))
+    prediction = "spam" if probabilities["spam"] >= spam_threshold else "ham"
+    return prediction, probabilities
 
 
 def explain_prediction(model, message, top_n=5):
@@ -193,7 +194,7 @@ with tab_detection:
         min_value=0.3,
         max_value=0.5,
         value=0.5,
-        step=0.15,
+        step=0.1,
         format="%.1f",
         help=(
             "Lower thresholds may detect more Spam but "
@@ -216,23 +217,17 @@ with tab_detection:
             model_name = model_options[selected_model]
 
             # Tai mo hinh da huan luyen
-            model = get_model(model_name)
+            try:
+                model = get_model(model_name)
+            except FileNotFoundError:
+                st.error(
+                    "Model file not found. Run all cells in "
+                    "SMS_Spam_Detection.ipynb, then try again."
+                )
+                st.stop()
 
-            
-            # Du doan tin nhan va lay xac suat
-            prediction, probabilities = predict_message(
-                model,
-                message
-            )
-
-            # Ap dung nguong phan loai do nguoi dung chon
+            prediction, probabilities = predict_message(model, message, spam_threshold)
             spam_probability = probabilities["spam"]
-
-            prediction = (
-                "spam"
-                if spam_probability >= spam_threshold
-                else "ham"
-            )
 
             # 4. Hien thi ket qua
             st.subheader("Prediction Result")
@@ -359,7 +354,7 @@ with tab_detection:
                 f"với ngưỡng phân loại **{threshold_percent:.0f}%**."
             )
 
-            if spam_probability >= spam_threshold:
+            if prediction == "spam":
                 st.write(
                     f"Vì xác suất Spam ({spam_percent:.2f}%) "
                     f"lớn hơn hoặc bằng ngưỡng "
@@ -398,6 +393,34 @@ with tab_performance:
         "Multinomial Naive Bayes and Logistic Regression."
     )
 
+    st.subheader("So sánh ngưỡng phân loại trên tập Test")
+    threshold_path = BASE_DIR / "outputs" / "threshold_metrics.csv"
+    if threshold_path.is_file():
+        threshold_results = pd.read_csv(threshold_path)
+        score_columns = ["Accuracy", "Precision", "Recall", "F1-score"]
+        threshold_results[score_columns] *= 100
+        st.dataframe(
+            threshold_results,
+            column_config={
+                "Threshold": st.column_config.NumberColumn("Ngưỡng", format="%.2f"),
+                "Selected on validation": "Chọn trên Validation",
+                "False Positive": "Ham báo nhầm",
+                "False Negative": "Spam bỏ sót",
+                **{
+                    metric: st.column_config.NumberColumn(metric, format="%.2f%%")
+                    for metric in score_columns
+                },
+            },
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.caption(
+            "Precision, Recall và F1-score đo cho lớp Spam. "
+            "Giảm ngưỡng có thể phát hiện thêm Spam và làm tăng số tin Ham bị báo nhầm."
+        )
+    else:
+        st.info("Chạy toàn bộ notebook để tạo bảng so sánh ngưỡng.")
+
     # Xac dinh duong dan file metrics.csv
     base_dir = Path(__file__).resolve().parent
     metrics_path = base_dir / "outputs" / "metrics.csv"
@@ -423,7 +446,7 @@ with tab_performance:
         ).round(2)
 
         # Hien thi bang so sanh
-        st.subheader("Evaluation Metrics")
+        st.subheader("Evaluation Metrics at Threshold 0.50")
 
         st.dataframe(
             display_df,
@@ -433,7 +456,7 @@ with tab_performance:
 
         st.caption(
             "All metrics are displayed as percentages. "
-            "Precision, Recall and F1-score refer to the Spam class."
+            "Baseline threshold: 0.50. Precision, Recall and F1-score refer to the Spam class."
         )
         
         # Hien thi bieu do so sanh mo hinh
@@ -505,8 +528,8 @@ with tab_about:
     st.subheader("Dataset")
     st.write(
         "This project uses the UCI SMS Spam Collection "
-        "dataset. After removing duplicate messages; "
-        "5,169 SMS messages remain for model development."
+        "dataset. After removing duplicate messages, "
+        "5,171 SMS messages remain for model development."
     )
 
     st.subheader("Machine Learning Models")
